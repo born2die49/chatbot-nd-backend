@@ -24,11 +24,21 @@ SITE_ID = 1
 
 WEBSITE_URL = 'http://localhost:8000'
 
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'email'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = "none"
+
+
+# ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+# ACCOUNT_SIGNUP_FIELDS = {
+#     'email': {'required': True},
+#     'password1': {'required': True},
+#     'password2': {'required': True},
+# }
+# ACCOUNT_EMAIL_VERIFICATION = "none"
 
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -65,11 +75,14 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
 
+    'allauth',
     'allauth.account',
+    'allauth.socialaccount',
     
     'corsheaders',
     
     'dj_rest_auth',
+    'dj_rest_auth.registration',
     
     'useraccount',
 ]
