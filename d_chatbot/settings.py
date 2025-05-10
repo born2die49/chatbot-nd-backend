@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     'document',
     'vectorstore',
     'llm',
+    'chat'
 ]
 
 MIDDLEWARE = [
