@@ -85,7 +85,9 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     
     'useraccount',
-    'document'
+    'document',
+    'vectorstore',
+    'llm',
 ]
 
 MIDDLEWARE = [
@@ -177,3 +179,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# VECTOR STORE SETTINGS
+# For ChromaDB, if persisting to disk:
+CHROMA_DB_PATH = BASE_DIR / "vector_store_data" / "chroma_db"
+
+# EMBEDDING MODEL SETTINGS
+EMBEDDING_MODEL_PROVIDER = "huggingface" # or "openai", "custom", etc.
+HUGGINGFACE_EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+
+# Ensure CHROMA_DB_PATH directory exists or is creatable
+import os
+if not os.path.exists(CHROMA_DB_PATH):
+    os.makedirs(CHROMA_DB_PATH, exist_ok=True)
