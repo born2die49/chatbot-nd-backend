@@ -72,3 +72,13 @@ class DocumentCreateSerializer(serializers.ModelSerializer):
         title = validated_data.get('title')
         
         return DocumentService.create_document(user, file, title)
+    
+class DocumentListSerializer(serializers.Serializer):
+    """
+    Serializer for the document list response.
+    Extends the existing DocumentSerializer to add pagination and other metadata.
+    """
+    count = serializers.IntegerField()
+    next = serializers.URLField(allow_null=True)
+    previous = serializers.URLField(allow_null=True)
+    results = DocumentSerializer(many=True)

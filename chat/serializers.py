@@ -80,3 +80,13 @@ class MessageCreateSerializer(serializers.Serializer):
         if not value.strip():
             raise serializers.ValidationError("Message content cannot be empty.")
         return value
+    
+    
+class ChatSessionUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for updating chat session details.
+    Currently only supports updating the title.
+    """
+    class Meta:
+        model = ChatSession
+        fields = ['title']
