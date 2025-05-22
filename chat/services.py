@@ -1,11 +1,14 @@
 from typing import List, Dict, Optional, Any
 import uuid
+import logging
 from django.db import transaction
 from django.contrib.auth import get_user_model
 
 from .models import ChatSession, ChatMessage
 from vectorstore.services.vector_store_manager import VectorStoreManager
 from llm.tasks import process_retrieval_query, generate_direct_response
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -83,16 +86,25 @@ class ChatService:
         """
         Add a user message to a chat session.
         """
+        logger.info(f"Attempting to add user message. Session ID: {session_id}, User: {user}, User Authenticated: {user.is_authenticated if hasattr(user, 'is_authenticated') else 'N/A'}")
         try:
             session = ChatSession.objects.get(id=session_id, user=user)
+            logger.info(f"Found session: {session.id}, owned by: {session.user}")
+            
+            if session.user != user:
+                logger.warning(f"User mismatch: Request user {user} (ID: {user.id if hasattr(user,'id') else 'N/A'}) does not match session owner {session.user} (ID: {session.user.id if hasattr(session.user,'id') else 'N/A'}) for session {session_id}.")
+                return None
+            
             message = ChatMessage.objects.create(
                 session=session,
                 message_type='user',
                 content=content
             )
+            logger.info(f"User message created with ID: {message.id}")
             return message
         except ChatSession.DoesNotExist:
-            return None
+            logger.error(f"ChatSession with ID {session_id} not found.")
+            raise  
     
     @staticmethod
     def add_assistant_message(session_id: str, content: str, references: Optional[Dict] = None) -> ChatMessage:

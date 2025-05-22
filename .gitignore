@@ -164,3 +164,7 @@ cython_debug/
 
 # Vector store data
 vector_store_data/
+
+# Static files
+static/
+staticfiles/

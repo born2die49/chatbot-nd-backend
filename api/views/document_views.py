@@ -9,7 +9,7 @@ from document.serializers import (
     DocumentSerializer,
     DocumentChunkSerializer
 )
-from document.services import DocumentService
+from document.services.document_service import DocumentService
 
 
 class StandardResultsSetPagination(PageNumberPagination):

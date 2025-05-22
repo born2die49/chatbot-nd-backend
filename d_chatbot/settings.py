@@ -11,12 +11,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("SECRET_KEY")
+# SECRET_KEY = os.environ.get("SECRET_KEY")
+
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-default-dev-key-change-in-production")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = bool(os.environ.get("DEBUG", default=0))
+DEBUG = bool(os.environ.get("DEBUG", default=1))
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
+# ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
+
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost 127.0.0.1 [::1]").split(" ")
 
 AUTH_USER_MODEL = 'useraccount.User'
 
@@ -189,7 +193,18 @@ CHROMA_DB_PATH = BASE_DIR / "vector_store_data" / "chroma_db"
 EMBEDDING_MODEL_PROVIDER = "huggingface" # or "openai", "custom", etc.
 HUGGINGFACE_EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
+# Celery Configuration Options
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Example for Redis
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0' # Example for Redis
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE # Use your Django TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60 
+
+GROQ_API_KEY = "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"
+
 # Ensure CHROMA_DB_PATH directory exists or is creatable
-import os
 if not os.path.exists(CHROMA_DB_PATH):
     os.makedirs(CHROMA_DB_PATH, exist_ok=True)

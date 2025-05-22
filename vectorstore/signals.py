@@ -4,34 +4,36 @@ from django.dispatch import receiver
 from django.db import transaction
 
 from document.models import Document
+from .models import VectorStoreInstance
 
 logger = logging.getLogger(__name__)
 
-# Add signals here as needed
-# For example, you might want to automatically process documents when they're marked as completed
-
 @receiver(post_save, sender=Document)
-def add_document_to_default_vector_store(sender, instance, created, **kwargs):
-    """Signal handler to add a document to the default vector store when its status is 'completed'."""
-    # This is just a placeholder. In a real application, you would implement this
-    # based on your specific requirements, for example:
+def add_document_to_default_vector_store(sender, instance, **kwargs):
+    """Signal handler to add a document to the default vector store when its status changes to 'completed'."""
     
-    # if instance.status == 'completed':
-    #     def process_document():
-    #         from .services.vector_store_manager import VectorStoreManager
-    #         try:
-    #             # Get default vector store for user
-    #             vector_store = VectorStoreInstance.objects.filter(
-    #                 user=instance.user, 
-    #                 status='ready'
-    #             ).first()
-    #             
-    #             if vector_store:
-    #                 manager = VectorStoreManager()
-    #                 manager.add_document_to_vector_store(str(vector_store.id), str(instance.id))
-    #         except Exception as e:
-    #             logger.exception(f"Error adding document to vector store: {str(e)}")
-    #     
-    #     transaction.on_commit(process_document)
-    
-    pass
+    # Only process documents that have completed processing
+    if instance.status == 'completed':
+        logger.info(f"Document {instance.id} completed processing, adding to vector store")
+        
+        def queue_embedding_task():
+            from .tasks import embed_document
+            
+            try:
+                # Get default vector store for user
+                vector_store = VectorStoreInstance.objects.filter(
+                    user=instance.user, 
+                    status='ready'
+                ).first()
+                
+                if vector_store:
+                    logger.info(f"Queueing embedding task for document {instance.id} in vector store {vector_store.id}")
+                    # Queue Celery task
+                    embed_document.delay(str(vector_store.id), str(instance.id))
+                else:
+                    logger.warning(f"No active vector store found for user {instance.user.id}, skipping embedding")
+            except Exception as e:
+                logger.exception(f"Error queueing document for embedding: {str(e)}")
+        
+        # Use on_commit to ensure database transaction is complete before queueing task
+        transaction.on_commit(queue_embedding_task)

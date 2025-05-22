@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework import viewsets, permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -13,6 +15,8 @@ from chat.serializers import (
 from chat.services import ChatService
 from chat.tasks import process_user_message, generate_session_title
 from chat.serializers import ChatSessionUpdateSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -156,6 +160,10 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         content = serializer.validated_data['content']
         
+        logger.info(f"ChatMessageViewSet.create: User: {request.user}, Is Authenticated: {request.user.is_authenticated}") # <<< ADD THIS
+        if not request.user.is_authenticated: # Add an explicit check
+            return Response({"detail": "User is not authenticated."}, status=status.HTTP_401_UNAUTHORIZED)
+        
         # Add user message to the session
         message = ChatService.add_user_message(
             session_id=session.id,
@@ -163,8 +171,16 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
             content=content
         )
         
+        if message is None: # <<< ADD THIS CHECK
+            # Log why it might be None based on ChatService logic
+            logger.error(f"ChatService.add_user_message returned None for session {session.id}, user {request.user}. Possible session not found or user mismatch.")
+            return Response(
+                {"detail": "Failed to create message. Session not found or user mismatch."},
+                status=status.HTTP_400_BAD_REQUEST # Or 404 if session not found
+            )
+        
         # Trigger async processing of the message
-        process_user_message.delay(
+        process_user_message(
             session_id=str(session.id),
             user_id=str(request.user.id),
             content=content

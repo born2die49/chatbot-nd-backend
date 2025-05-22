@@ -13,7 +13,7 @@ from vectorstore.serializers import (
 )
 
 # Assume this task exists or will be created
-from vectorstore.tasks import embed_document_chunks_for_instance_task
+from vectorstore.tasks import embed_document
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -138,7 +138,7 @@ class AddDocumentToVectorStoreView(generics.CreateAPIView):
         )
         
         # Start async task for embedding
-        embed_document_chunks_for_instance_task.delay(
+        embed_document.delay(
             instance_id=str(vector_store_instance.id), 
             document_id=str(document_id)
         )
