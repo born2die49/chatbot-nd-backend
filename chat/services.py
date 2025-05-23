@@ -4,6 +4,8 @@ import logging
 from django.db import transaction
 from django.contrib.auth import get_user_model
 
+from vectorstore.models import VectorStoreInstance
+
 from .models import ChatSession, ChatMessage
 from vectorstore.services.vector_store_manager import VectorStoreManager
 from llm.tasks import process_retrieval_query, generate_direct_response
@@ -21,12 +23,24 @@ class ChatService:
     def create_session(user: Any, title: str = "New Chat", vector_store_id: Optional[str] = None) -> ChatSession:
         """
         Create a new chat session for a user.
+        If vector_store_id is not provided, try to assign a default one.
         """
+        resolved_vector_store_id = vector_store_id
+        if not resolved_vector_store_id:
+            # Try to find a default ready vector store for the user
+            # Order by 'created_at' or '-created_at' if you prefer newest/oldest as default
+            default_vs = VectorStoreInstance.objects.filter(user=user, status='ready').order_by('-created_at').first()
+            if default_vs:
+                resolved_vector_store_id = default_vs.id
+                logger.info(f"No vector_store_id provided for new session. Using default: {default_vs.id} for user {user.id}")
+            else:
+                logger.warning(f"No vector_store_id provided and no default ready vector store found for user {user.id}. Session will be created without RAG capabilities initially.")
+
         with transaction.atomic():
             session = ChatSession.objects.create(
                 user=user,
                 title=title,
-                vector_store_id=vector_store_id
+                vector_store_id=resolved_vector_store_id # Use the resolved ID
             )
             
             # Add a system welcome message

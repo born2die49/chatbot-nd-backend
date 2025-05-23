@@ -65,7 +65,7 @@ class DocumentCreateSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         """Create a new document using DocumentService."""
-        from services.document_service import DocumentService
+        from document.services.document_service import DocumentService
         
         user = self.context['request'].user
         file = validated_data.get('file')

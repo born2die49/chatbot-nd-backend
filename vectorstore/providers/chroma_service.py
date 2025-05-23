@@ -17,6 +17,7 @@ class ChromaVectorStoreProvider(VectorStoreProvider):
     def __init__(self):
         self.client = None
         self.persistent = False
+        self.vector_stores: Dict[str, Chroma] = {}
     
     def initialize(self, config: Dict[str, Any]) -> None:
         """Initialize ChromaDB client with configuration.

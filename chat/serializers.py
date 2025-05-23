@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from vectorstore.models import VectorStoreInstance
 from .models import ChatSession, ChatMessage
 
 
@@ -83,10 +85,28 @@ class MessageCreateSerializer(serializers.Serializer):
     
     
 class ChatSessionUpdateSerializer(serializers.ModelSerializer):
-    """
-    Serializer for updating chat session details.
-    Currently only supports updating the title.
-    """
+    # This field expects the UUID of the vector store.
+    vector_store = serializers.PrimaryKeyRelatedField(
+        queryset=VectorStoreInstance.objects.all(), # Base queryset for validation
+        required=False,
+        allow_null=True
+    )
+
     class Meta:
         model = ChatSession
-        fields = ['title']
+        fields = ['title', 'vector_store'] # 'vector_store' refers to the ForeignKey
+
+    def validate_vector_store(self, value):
+        # 'value' here is a VectorStoreInstance object if found by PrimaryKeyRelatedField, or None.
+        if value is None:
+            return None # Allowing dissociation
+
+        user = self.context['request'].user
+        if value.user != user:
+            raise serializers.ValidationError("You do not have permission to use this vector store.")
+        if value.status != 'ready':
+            # Allow linking even if indexing, but frontend should be aware.
+            # For a stricter approach, uncomment:
+            # raise serializers.ValidationError(f"Vector store '{value.name}' is not ready (status: {value.status}).")
+            pass
+        return value

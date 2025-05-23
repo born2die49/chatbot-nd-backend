@@ -82,25 +82,18 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
     
     def update(self, request, *args, **kwargs):
-        """
-        Update chat session (currently only title).
-        """
-        partial = kwargs.pop('partial', False)
+        partial = kwargs.pop('partial', True) # Typically PATCH is partial=True
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+
+        # Pass context to the serializer if it needs request (e.g., for user)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        
-        # Update the session title using the service
-        if 'title' in serializer.validated_data:
-            ChatService.update_session_title(
-                session_id=instance.id,
-                user=request.user,
-                title=serializer.validated_data['title']
-            )
-        
-        # Re-fetch the instance to get updated data
-        instance = self.get_object()
-        response_serializer = ChatSessionSerializer(instance)
+
+        self.perform_update(serializer) # This calls serializer.save()
+
+        instance.refresh_from_db()
+        # Use the detail serializer (ChatSessionSerializer) for the response
+        response_serializer = ChatSessionSerializer(instance, context={'request': request}) 
         return Response(response_serializer.data)
     
     def destroy(self, request, *args, **kwargs):
